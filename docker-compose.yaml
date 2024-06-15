@@ -1,0 +1,186 @@
+version: '3'
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    volumes:
+      - ./backend_configs/api_config/config.ini:/configs/config.ini
+    env_file:
+      - ./backend_configs/api_config/.env
+    networks:
+      - postgres
+      - s3
+      - mongodb
+      - rabbitmq
+      - default
+      - redis
+    ports:
+      - 5000:5000
+    command: bash -c "source ./.venv/bin/activate && hypercorn --config api/hypercorn_config.toml api:app"
+
+  mailer:
+    container_name: mailer
+    build:
+      context: .
+      dockerfile: docker/mailer/Dockerfile
+
+    volumes:
+      - ./backend_configs/mailer_config/config.ini:/configs/config.ini
+    
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+    networks:
+      - rabbitmq
+      - redis
+    
+    command: 'bash -c "source ./.venv/bin/activate && python ./main.py"'
+  
+  rabbitmq:
+    build:
+      context: .
+      dockerfile: docker/rabbitmq/Dockerfile
+    volumes:
+      - ./docker_configs/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+      - rabbitmq:/var/lib/rabbitmq
+    ports:
+      - 15672:15672
+    networks:
+      - rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 10s
+      retries: 5  
+
+  s3:
+    build:
+      context: .
+      dockerfile: docker/s3/Dockerfile
+    container_name: s3
+    restart: unless-stopped
+    volumes:
+      - ./docker_configs/s3/config.json:/configs/config.json
+    ports:
+      - '8888:8888'
+      - '9333:9333'
+      - '8333:8333'
+      - '19333:19333'
+      - '18080:18080'
+      - '18888:18888'
+    command: ["server", "-filer", "-s3", "-ip=0.0.0.0", "-volume.max=0", "-master.volumeSizeLimitMB=1024", '-s3.config', /configs/config.json]
+    networks:
+      - s3
+
+  postgres:
+    build:
+      context: .
+      dockerfile: docker/postgres/Dockerfile
+    volumes:
+      - ./init_migration.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres:/var/lib/postgresql/data/pgdata
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+    ports:
+      - 65000:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - postgres
+
+  pgadmin:
+    build:
+      context: .
+      dockerfile: docker/pgadmin/Dockerfile
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=example@example.com
+      - PGADMIN_DEFAULT_PASSWORD=password
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    restart: unless-stopped
+    networks:
+      - postgres
+    ports:
+      - 5050:80
+
+  mongodb:
+    build:
+      context: .
+      dockerfile: docker/mongodb/Dockerfile
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      - 27017:27017
+    networks:
+      - mongodb
+
+  mongo-express:
+    build:
+      context: .
+      dockerfile: docker/mongo-express/Dockerfile
+    restart: unless-stopped
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+      ME_CONFIG_MONGODB_URL: mongodb://root:password@mongodb:27017/
+      ME_CONFIG_BASICAUTH: false
+    networks:
+      - mongodb
+
+  redis:
+    container_name: redis
+    build:
+      context: .
+      dockerfile: docker/redis/Dockerfile
+    volumes:
+      - redis:/data
+      - /docker_configs/redis/redis.conf:/redis.conf
+    ports:
+      - 6379:6379    
+    networks:
+      - redis
+    environment:
+      # - REDIS_USERNAME=user
+      # - REDIS_PASSWORD=password
+      - REDIS_PORT=6379
+      - REDIS_DATABASES=1
+    command: ["redis-server", "/redis.conf"]
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  rabbitmq:
+    driver: bridge
+  postgres:
+    driver: bridge
+  s3:
+    driver: bridge
+  redis:
+    driver: bridge
+  mongodb:
+    driver: bridge
+  default:
+    driver: bridge
+
+volumes:
+  s3:
+  postgres:
+  mongodb:
+  redis:
+  rabbitmq:
+  

@@ -1,0 +1,6 @@
+debug="True"
+alpn_protocols="[h2]"
+bind="0.0.0.0:5000"
+worker_class="uvloop"   
+workers=4
+loglevel="warn"
