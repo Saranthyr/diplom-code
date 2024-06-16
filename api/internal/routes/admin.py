@@ -155,13 +155,13 @@ class RegionView(ModelView):
 class TourismTypeView(ModelView):
     fields = [
         TourismType.name,
-        HasOne('_thumbnail', 'Thumbnail', identity='file', exclude_from_create=True, exclude_from_edit=True),
-        ImageField('_thumbnail.content', 'Thumbnail_pic', exclude_from_detail=True)
+        HasOne('_photo', 'Thumbnail', identity='file', exclude_from_create=True, exclude_from_edit=True),
+        ImageField('_photo.content', 'Thumbnail_pic', exclude_from_detail=True)
     ]
     
     async def create(self, request: Request, data: Dict[str, Any]):
         session = request.state.session
-        thumbnail = data['_thumbnail.content'][0]
+        thumbnail = data['_photo.content'][0]
         thumbnail_name = thumbnail.filename,
         thumbnail = F(await thumbnail.read(), filename=thumbnail.filename)
         thumbnail = File(
@@ -175,8 +175,8 @@ class TourismTypeView(ModelView):
         else:
             await anyio.to_thread.run_sync(session.commit)  # type: ignore[arg-type]
             await anyio.to_thread.run_sync(session.refresh, thumbnail)  # type: ignore[arg-type]
-        del data['_thumbnail.content']
-        data['thumbnail'] = thumbnail.id
+        del data['_photo.content']
+        data['photo'] = thumbnail.id
         obj = TourismType(
             **data
         )
