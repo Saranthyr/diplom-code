@@ -1,7 +1,7 @@
 import os.path
 from pathlib import Path
 
-from fastapi import APIRouter, FastAPI, Request
+from fastapi import APIRouter, FastAPI, Request, Response
 from sqlalchemy_file.storage import StorageManager
 from dependency_injector.wiring import Provide, inject
 from dotenv import load_dotenv
@@ -36,6 +36,23 @@ container.init_resources()
 
 app = FastAPI()
 admin = admin()
+
+@app.options('/{rest_of_path:path}')
+async def preflight_handler(request: Request, rest_of_path: str) -> Response:
+    response = Response()
+    response.headers['Access-Control-Allow-Origin'] = "*"
+    response.headers['Access-Control-Allow-Methods'] = "*"
+    response.headers['Access-Control-Allow-Headers'] = "*"
+    return response
+
+# set CORS headers
+@app.middleware("http")
+async def add_CORS_header(request: Request, call_next):
+    response = await call_next(request)
+    response.headers['Access-Control-Allow-Origin'] = "*"
+    response.headers['Access-Control-Allow-Methods'] = "*"
+    response.headers['Access-Control-Allow-Headers'] = "*"
+    return response
 
 app.include_router(auth)
 app.include_router(posts)
