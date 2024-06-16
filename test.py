@@ -1,13 +1,17 @@
+from dataclasses import dataclass
 import json
-from typing import Any, Coroutine, Dict, List, Sequence
+from typing import Any, Coroutine, Dict, List, Optional, Sequence
 from uuid import uuid4
+import uuid
 from wsgiref.util import request_uri
 from fastapi import Request
+from fastapi.datastructures import FormData
 from sqlalchemy import (
     ForeignKey,
     create_engine,
+    select,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker, lazyload, joinedload, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.associationproxy import association_proxy, AssociationProxy
 from sqlalchemy.sql import Select
@@ -21,9 +25,10 @@ from libcloud.storage.drivers.s3 import S3StorageDriver
 from sqlalchemy_file.storage import StorageManager
 from sqlalchemy_file import File, FileField, ImageField
 from sqlalchemy_file.processors import Processor
-from starlette_admin import HasMany, HasOne, RowActionsDisplayType, StringField
+from starlette_admin import BaseField, HasMany, HasOne, RelationField, RequestAction, RowActionsDisplayType, StringField
 from starlette_admin.contrib.sqla import Admin, ModelView
-from starlette_admin.fields import IntegerField, ImageField as IF
+from starlette_admin.contrib.sqla.helpers import build_query
+from starlette_admin.fields import IntegerField, ImageField as IF, FileField as FF
 
 
 class TestProcessor(Processor):
@@ -46,15 +51,18 @@ class IDMixin:
 class User(Base, IDMixin):
     __tablename__ = "user"
     name: Mapped[str]
-    avatar: Mapped[int] = mapped_column(ForeignKey('file.id'))
+    avatar: Mapped[str] = mapped_column(ForeignKey('file.id',
+                                                   ondelete="SET NULL",
+                                                   onupdate="CASCADE"), nullable=True)
     # avatar: Mapped[dict[str, Any]] = mapped_column(FileField(processors=[TestProcessor()]))
     # av: AssociationProxy[dict] = association_proxy('avatar_',
     #                                      'content')
     
-    avatar_: Mapped['FileMod'] = relationship()
+    avatar_: Mapped['FileMod'] = relationship(cascade="all, delete-orphan", single_parent=True)
     
-class FileMod(Base, IDMixin):
+class FileMod(Base):
     __tablename__ = 'file'
+    id: Mapped[str] = mapped_column(primary_key=True, default=str(uuid.uuid4()))
     content: Mapped[dict[str, Any]] = mapped_column(ImageField(upload_storage='default',
                                                                processors=[TestProcessor()]))
 
@@ -82,16 +90,23 @@ class UserView(ModelView):
     fields = [
         StringField('name',
                     'name'),
-        IntegerField('avatar','avatarid'),
-        IF('avatar_', 'avatar')
+        StringField('id',
+                    'id'),
+        IF("avatar_.content", 'AVATAR', id='av',
+           exclude_from_detail=True),
+        IF("_meta", 'ava', read_only=True, exclude_from_list=True),
+        StringField("avatar_"),
+        HasOne('avatar_', identity='avatar_', multiple=False, 
+               disabled=True,
+               exclude_from_create=True,
+               exclude_from_edit=True)
+        
     ]
     
-    def get_list_query(self) -> Select:
-        return super().get_list_query()
     
     async def create(self, request: Request, data: Dict[str, Any]):
         session = request.state.session
-        avatar = data['avatar_'][0]
+        avatar = data['avatar_.content'][0]
         data = {'name': data['name']}
         avatar = File(await avatar.read(), filename=avatar.filename)
         avatar = FileMod(
@@ -116,6 +131,40 @@ class UserView(ModelView):
             await anyio.to_thread.run_sync(session.commit)  # type: ignore[arg-type]
             await anyio.to_thread.run_sync(session.refresh, avatar)  # type: ignore[arg-type]
         
+        
+    async def edit(self, request: Request, pk: Any, data: Dict[str, Any]) -> Any:
+        session = request.state.session
+        if isinstance(session, AsyncSession):
+            obj = await session.get(User, pk)
+            avatar = await session.get(FileMod, obj.avatar)
+            await session.delete(avatar)
+            await session.commit()
+        else:
+            obj = avatar = await anyio.to_thread.run_sync(session.get, User, pk)
+            avatar = await anyio.to_thread.run_sync(session.get, FileMod, obj.avatar)
+            await anyio.to_thread.run_sync(session.delete, avatar)
+            await anyio.to_thread.run_sync(session.commit)
+        avatar = data['avatar_.content'][0]
+        data = {'name': data['name']}
+        avatar = File(await avatar.read(), filename=avatar.filename)
+        avatar = FileMod(
+            content=avatar
+        )
+        session.add(avatar)
+        if isinstance(session, AsyncSession):
+            await session.commit()
+            await session.refresh(avatar)
+        else:
+            await anyio.to_thread.run_sync(session.commit)  # type: ignore[arg-type]
+            await anyio.to_thread.run_sync(session.refresh, avatar)  # type: ignore[arg-type]
+        obj.avatar = avatar.id
+        obj.name = data['name']
+        if isinstance(session, AsyncSession):
+            await session.commit()
+            await session.refresh(avatar)
+        else:
+            await anyio.to_thread.run_sync(session.commit)  # type: ignore[arg-type]
+            await anyio.to_thread.run_sync(session.refresh, avatar)  # type: ignore[arg-type]
 
     
 class FileView(ModelView):

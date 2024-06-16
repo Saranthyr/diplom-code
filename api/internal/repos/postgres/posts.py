@@ -170,3 +170,10 @@ class PostRepository:
             stmt = update(Post).values({"rating": rating}).where(Post.id == uid)
             await s.execute(stmt)
             return 0
+        
+    async def all(self):
+        async with self.session_factory() as s:
+            stmt = select(Post)
+            res = await s.execute(stmt)
+            res = res.mappings().all()
+            return res

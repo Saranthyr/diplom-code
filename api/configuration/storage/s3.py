@@ -1,7 +1,7 @@
 from dependency_injector.resources import Resource
 from sqlalchemy_file.storage import StorageManager
 from libcloud.storage.types import Provider
-from libcloud.storage import providers
+from libcloud.storage.drivers.s3 import S3StorageDriver
 from libcloud.storage.base import Container
 
 
@@ -11,8 +11,7 @@ class S3Storage(Resource):
         self.secret_key = aws_secret_key
         self.host = host
         self.port = port
-        drv = providers.get_driver(Provider.S3)
-        self.stor = drv(self.access_key, self.secret_key, False, host, port)
+        self.stor = S3StorageDriver(self.access_key, self.secret_key, False, self.host, self.port)
         try:
             self.stor.create_container("default")
         except Exception:

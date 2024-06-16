@@ -81,3 +81,6 @@ class PostServiceMain:
 
     async def all_comments(self, id, comment_id: int | None = None):
         return await self.comments.comments_with_replies(id, comment_id)
+    
+    async def all(self):
+        return await self.post_service.all()

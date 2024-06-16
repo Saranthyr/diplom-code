@@ -109,3 +109,9 @@ async def get_comment_replies(
     post_service: PostServiceMain = Depends(Provide[Container.post_service_main]),
 ):
     return await post_service.all_comments(id, comment_id)
+
+
+@router.get('/all')
+@inject
+async def all(post_service: PostServiceMain = Depends(Provide[Container.post_service_main])):
+    return await post_service.all()

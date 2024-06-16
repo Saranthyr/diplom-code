@@ -58,6 +58,9 @@ class PostService:
     async def approve_post(self, id):
         return await self.repository.approve_post(id)
 
+    async def all(self):
+        return await self.repository.all()
+
     async def read_all(
         self,
         region_id: int | None,

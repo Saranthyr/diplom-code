@@ -17,6 +17,12 @@ services:
       - redis
     ports:
       - 5000:5000
+
+    depends_on:
+      mailer:
+        condition: service_started
+      s3:
+        condition: service_started
     command: bash -c "source ./.venv/bin/activate && hypercorn --config api/hypercorn_config.toml api:app"
 
   mailer:
@@ -175,7 +181,7 @@ networks:
   mongodb:
     driver: bridge
   default:
-    driver: bridge
+    driver: host
 
 volumes:
   s3:
