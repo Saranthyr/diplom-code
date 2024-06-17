@@ -168,6 +168,15 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  
+  front:
+    build:
+      context: .
+      dockerfile: docker/front/Dockerfile
+    ports:
+      - 4173:4173
+    networks:
+      - default
 
 networks:
   rabbitmq:

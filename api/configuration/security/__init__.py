@@ -6,6 +6,7 @@ from typing import Dict, Tuple
 from dotenv import load_dotenv
 from jose import jwt
 from fastapi.security import OAuth2PasswordBearer
+from passlib.context import CryptContext
 
 from api.pkg.models.exceptions.users import NoPermission
 
@@ -15,6 +16,7 @@ load_dotenv()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login", auto_error=False)
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 async def create_token(

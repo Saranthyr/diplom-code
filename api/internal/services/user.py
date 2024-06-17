@@ -14,10 +14,8 @@ from api.pkg.models.exceptions import (
     UserNotFound,
     MissingCurrentPassword,
 )
-from api.configuration.security import create_token, decode_token
+from api.configuration.security import create_token, decode_token, pwd_context
 from api.pkg.models.pydantic.responses import TokenResponse
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class UserService:

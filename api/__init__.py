@@ -37,22 +37,22 @@ container.init_resources()
 app = FastAPI()
 admin = admin()
 
-@app.options('/{rest_of_path:path}')
-async def preflight_handler(request: Request, rest_of_path: str) -> Response:
-    response = Response()
-    response.headers['Access-Control-Allow-Origin'] = "*"
-    response.headers['Access-Control-Allow-Methods'] = "*"
-    response.headers['Access-Control-Allow-Headers'] = "*"
-    return response
+# @app.options('/{rest_of_path:path}')
+# async def preflight_handler(request: Request, rest_of_path: str) -> Response:
+#     response = Response()
+#     response.headers['Access-Control-Allow-Origin'] = "*"
+#     response.headers['Access-Control-Allow-Methods'] = "*"
+#     response.headers['Access-Control-Allow-Headers'] = "*"
+#     return response
 
 # set CORS headers
-@app.middleware("http")
-async def add_CORS_header(request: Request, call_next):
-    response = await call_next(request)
-    response.headers['Access-Control-Allow-Origin'] = "*"
-    response.headers['Access-Control-Allow-Methods'] = "*"
-    response.headers['Access-Control-Allow-Headers'] = "*"
-    return response
+# @app.middleware("http")
+# async def add_CORS_header(request: Request, call_next):
+#     response = await call_next(request)
+#     response.headers['Access-Control-Allow-Origin'] = "*"
+#     response.headers['Access-Control-Allow-Methods'] = "*"
+#     response.headers['Access-Control-Allow-Headers'] = "*"
+#     return response
 
 app.include_router(auth)
 app.include_router(posts)

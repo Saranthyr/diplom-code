@@ -38,7 +38,7 @@ CREATE TABLE "posts" (
   "link" varchar(512),
   "draft" bool default true,
   "archived" bool default false,
-  "approved" bool default false,
+  "approved" int default 1,
   "thumbnail" uuid
 );
 
@@ -71,7 +71,8 @@ CREATE TABLE "regions" (
   "name" varchar(128) UNIQUE,
   "thumbnail" uuid,
   "longitude" real,
-  "latitude" real
+  "latitude" real,
+  "description" text
 );
 
 CREATE TABLE "user_roles" (
@@ -134,7 +135,7 @@ alter table "post_hashtags" add FOREIGN key ("post_id") REFERENCES "posts" ("id"
 
 alter table "post_hashtags" add FOREIGN key ("tag") REFERENCES "hashtags" ("id");
 
-insert into "user_roles" (id, name) overriding system value values (1, 'Admin'), (2, 'Moderator'), (3, 'Author'), (4, 'User');
+insert into "user_roles" (id, name) overriding system value values (1, 'Admin'), (2, 'Moderator'), (3, 'User');
 
 insert into "tourism_types" (id, name) overriding system value values (1, 'Природный'), (2, 'Культурный'), (3, 'Исторический'), (4, 'Пляжный'), (5, 'Гастрономический'),  (6, 'Экстремальный'), (7, 'Религиозный'), (8, 'Авантюрный');
 

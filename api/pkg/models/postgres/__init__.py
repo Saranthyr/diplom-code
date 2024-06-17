@@ -66,6 +66,7 @@ class Region(Base, CoordinateFields):
     id: Mapped[int] = mapped_column(Identity(start=1, increment=1), primary_key=True)
     name: Mapped[str] = mapped_column(VARCHAR(128))
     thumbnail: Mapped[uuid.UUID] = mapped_column(ForeignKey("files.id"))
+    description: Mapped[str] = mapped_column(TEXT)
 
     _thumbnail: Mapped["File"] = relationship(single_parent=True, foreign_keys=[thumbnail],
                                               cascade='all, delete-orphan')
@@ -110,12 +111,13 @@ class Post(Base, CoordinateFields):
     )
     link: Mapped[str] = mapped_column(VARCHAR(128))
     draft: Mapped[bool] = mapped_column(BOOLEAN, default=expression.true())
-    approved: Mapped[bool] = mapped_column(BOOLEAN, default=expression.false())
-    archived: Mapped[bool] = mapped_column(BOOLEAN, default=expression.false())
+    approved: Mapped[int] = mapped_column(BOOLEAN, default=1)
     thumbnail: Mapped[uuid.UUID] = mapped_column(ForeignKey("files.id"))
 
     _thumbnail: Mapped["File"] = relationship(primaryjoin="Post.thumbnail == File.id", single_parent=True)
-    attachments: Mapped[list["File"]] = relationship(secondary="post_attachments")
+    attachments: Mapped[list["File"]] = relationship(secondary="post_attachments",
+                                                     single_parent=True,
+                                                     cascade='all, delete-orphan')
     _tourism_type: Mapped["TourismType"] = relationship()
     _region: Mapped["Region"] = relationship()
     tags: Mapped[list['Hashtag']] = relationship(secondary='post_hashtags')
