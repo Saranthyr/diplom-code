@@ -2,7 +2,8 @@ import datetime
 from typing import Literal
 from uuid import UUID
 
-from sqlalchemy import and_, asc, delete, desc, func, or_, select, update
+from pydantic import EmailStr
+from sqlalchemy import and_, asc, delete, desc, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.pkg.models.base.exception import BaseAPIException
@@ -12,6 +13,17 @@ from api.pkg.models.postgres import User
 class UserRepository:
     def __init__(self, session_factory: AsyncSession):
         self.session_factory = session_factory
+        
+    # async def create(
+    #     self,
+    #     username: EmailStr,
+    #     password: str,
+    #     nickname: str,
+    #     first_name: str,
+    #     last_name: str,
+    #     role: int
+    # ) -> Literal[0, 1]:
+    #     return 0
 
     async def create(
         self,

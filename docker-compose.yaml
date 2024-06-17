@@ -141,7 +141,6 @@ services:
       ME_CONFIG_MONGODB_ADMINUSERNAME: root
       ME_CONFIG_MONGODB_ADMINPASSWORD: password
       ME_CONFIG_MONGODB_URL: mongodb://root:password@mongodb:27017/
-      ME_CONFIG_BASICAUTH: false
     networks:
       - mongodb
 
@@ -168,15 +167,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-  
-  front:
-    build:
-      context: .
-      dockerfile: docker/front/Dockerfile
-    ports:
-      - 4173:4173
-    networks:
-      - default
 
 networks:
   rabbitmq:

@@ -1,3 +1,4 @@
+import datetime
 from uuid import UUID
 
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
@@ -18,6 +19,7 @@ class MongoDBBase:
         self,
         user_id: UUID,
         content: str,
+        created_at: datetime.datetime,
         collection: AsyncIOMotorCollection,
         parent: int | None = None,
     ) -> int:
@@ -26,6 +28,7 @@ class MongoDBBase:
             "_id": last_id + 1,
             "user": str(user_id),
             "content": content,
+            "created_at": created_at,
             "reply_to": parent,
         }
         await collection.insert_one(comment)
@@ -78,6 +81,7 @@ class MongoDBBase:
                         "content": 1,
                         "parent_comment_id": 1,
                         "user": 1,
+                        "created_at": 1,
                         "replies": {
                             "$map": {
                                 "input": "$replies",
@@ -88,6 +92,7 @@ class MongoDBBase:
                                     "parent_comment_id": "$$reply.parent_comment_id",
                                     "user": "$$reply.user",
                                     "replies": "$$reply.replies",
+                                    "created_at": "$$reply.created_at"
                                 },
                             }
                         },
