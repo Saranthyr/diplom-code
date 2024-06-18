@@ -15,7 +15,6 @@ class PostServiceMain:
     ) -> None:
         self.post_service = post_service
         self.file_service = file_service
-        self.s3 = s3
         self.rating_service = rating_service
         self.comments = comments
 
@@ -32,14 +31,7 @@ class PostServiceMain:
         long,
         link,
     ):
-        thumbnail_id = uuid4()
-        ext = mimetypes.guess_extension(thumbnail.content_type)
-        await self.s3.upload_file(
-            await thumbnail.read(), f"{thumbnail_id}{ext}", "post_thumbnails"
-        )
-        await self.file_service.create_file(
-            thumbnail_id, thumbnail.filename, ext, 1, thumbnail.content_type
-        )
+        thumbnail_id = await self.file_service.create_file(thumbnail)
         return await self.post_service.create(
             token,
             region,

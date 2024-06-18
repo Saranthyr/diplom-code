@@ -3,6 +3,7 @@ from uuid import UUID, uuid4
 
 from passlib.context import CryptContext
 
+from api.internal.repos.postgres.users import UserRepository
 from api.pkg.models.base.enums import TimeframeEnum
 from api.pkg.models.base.exception import BaseAPIException
 from api.pkg.models.exceptions import (
@@ -19,7 +20,7 @@ from api.pkg.models.pydantic.responses import TokenResponse
 
 
 class UserService:
-    def __init__(self, user_repository) -> None:
+    def __init__(self, user_repository: UserRepository) -> None:
         self.repository = user_repository
 
     async def create_user(
@@ -35,6 +36,10 @@ class UserService:
         if password != password_repeat:
             raise PasswordsNotMatch
         password = pwd_context.hash(password)
+        if await self.repository.read_by_username(username) is not None:
+            raise UsernameInUse
+        elif await self.repository.read_id_by_nickname(nickname) is not None:
+            raise NicknameInUse
         # try:
         return await self.repository.create(
             uid=uuid4(),

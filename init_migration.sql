@@ -33,8 +33,8 @@ CREATE TABLE "posts" (
   "author" uuid,
   "created_at" timestamp default current_timestamp,
   "rating" double precision,
-  "longitude" real,
-  "latitude" real,
+  "longitude" numeric(5,2),
+  "latitude" numeric(5,2),
   "link" varchar(512),
   "draft" bool default true,
   "archived" bool default false,
@@ -70,8 +70,8 @@ CREATE TABLE "regions" (
   "id" SERIAL PRIMARY KEY,
   "name" varchar(128) UNIQUE,
   "thumbnail" uuid,
-  "longitude" real,
-  "latitude" real,
+  "longitude" numeric(5,2),
+  "latitude" numeric(5,2),
   "description" text
 );
 

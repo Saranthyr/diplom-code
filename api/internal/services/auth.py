@@ -53,13 +53,7 @@ class AuthService:
         Returns:
             int: 0 в случае успеха, при столкновении с проблемой вызывает ошибку с базовым классом BaseHTTPException
         """
-        # async with self.rmq.connection() as conn:
-        #     ch = await conn.channel()
-        #     data = {"action": "code", "email": username}
-        #     await ch.default_exchange.publish(
-        #         aio_pika.Message(body=json.dumps(data).encode()), routing_key="mailer"
-        #     )
-        return await self.user_service.create_user(
+        await self.user_service.create_user(
             username,
             password,
             password_repeat,
@@ -68,6 +62,13 @@ class AuthService:
             last_name,
             role=role,
         )
+        async with self.rmq.connection() as conn:
+            ch = await conn.channel()
+            data = {"action": "code", "email": username}
+            await ch.default_exchange.publish(
+                aio_pika.Message(body=json.dumps(data).encode()), routing_key="mailer"
+            )
+        return 0
 
     async def generate_code(self, username: str):
         async with self.rmq.connection() as conn:

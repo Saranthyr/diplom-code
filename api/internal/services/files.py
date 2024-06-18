@@ -15,8 +15,8 @@ class FileService:
         self.repository = file_repo
 
     async def create_file(self, file):
-        sqlafile = SQLAFile(await file.read(), file.filename())
-        return await self.repository.create(sqlafile, file.filename())
+        sqlafile = SQLAFile(await file.read(), file.filename)
+        return await self.repository.create(sqlafile, file.filename)
 
     async def read_file(self, id):
         return await self.repository.read(id)

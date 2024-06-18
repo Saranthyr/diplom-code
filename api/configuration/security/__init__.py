@@ -51,7 +51,7 @@ async def decode_token(token: str) -> Dict[str, int | str]:
     Returns:
         Dict[str, int|str]: Полезная нагрузка токена
     """
-    decoded = jwt.decode(token, "str", algorithms="HS384")
+    decoded = jwt.decode(token, os.environ['JWT_SECRET'], algorithms="HS384")
     return decoded
 
 

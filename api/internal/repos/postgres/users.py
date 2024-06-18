@@ -44,14 +44,11 @@ class UserRepository:
             last_name=last_name,
             role=role,
         )
-        try:
-            async with self.session_factory() as s:
-                s.add(user)
-                await s.commit()
-            return 0
-        except Exception as exc:
-            print(exc)
-            raise BaseAPIException from exc
+        async with self.session_factory() as s:
+            s.add(user)
+            await s.flush()
+        return 0
+
 
     async def read_by_username(self, username: str):
         async with self.session_factory() as s:

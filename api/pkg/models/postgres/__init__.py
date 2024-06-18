@@ -14,6 +14,7 @@ from sqlalchemy.dialects.postgresql import (
     BOOLEAN,
     REAL,
     JSON,
+    NUMERIC
 )
 from sqlalchemy_file import FileField
 
@@ -22,8 +23,8 @@ from api.pkg.models.resources import Base
 
 
 class CoordinateFields:
-    longitude: Mapped[float] = mapped_column(REAL)
-    latitude: Mapped[float] = mapped_column(REAL)
+    longitude: Mapped[float] = mapped_column(NUMERIC(5, 2))
+    latitude: Mapped[float] = mapped_column(NUMERIC(5, 2))
 
 
 class User(Base):
@@ -111,7 +112,7 @@ class Post(Base, CoordinateFields):
     )
     link: Mapped[str] = mapped_column(VARCHAR(128))
     draft: Mapped[bool] = mapped_column(BOOLEAN, default=expression.true())
-    approved: Mapped[int] = mapped_column(BOOLEAN, default=1)
+    approved: Mapped[int] = mapped_column(INTEGER, default=1)
     thumbnail: Mapped[uuid.UUID] = mapped_column(ForeignKey("files.id"))
 
     _thumbnail: Mapped["File"] = relationship(primaryjoin="Post.thumbnail == File.id", single_parent=True)

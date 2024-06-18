@@ -1,4 +1,5 @@
 import datetime
+import re
 from typing import Any, Dict, Optional, Tuple, Union
 from uuid import UUID
 
@@ -42,8 +43,12 @@ class PostRepository:
                 thumbnail=thumbnail_id,
             )
             s.add(post)
-            await s.commit()
-            return 0
+            try:
+                await s.commit()
+            except Exception as e:
+                return e.__dict__
+            data = select(Post.id).where(Post.id == uid)
+            return (await s.execute(data)).scalar_one_or_none()
 
     async def read(self, uid):
         async with self.session_factory() as s:

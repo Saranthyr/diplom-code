@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
+import logging
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
@@ -34,7 +35,7 @@ class Database:
                 yield session
                 await session.commit()
             except Exception as e:
-                print("Session rollback because of exception %s", e)
+                logging.log(1, f"Session rollback because of exception {e}")
                 await session.rollback()
             finally:
                 await session.close()
