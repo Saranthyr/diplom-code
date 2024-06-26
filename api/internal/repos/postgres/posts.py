@@ -140,6 +140,8 @@ class PostRepository:
                         ),
                         (
                             Post.approved.in_(approved)
+                            if (approved is not [] and len(approved) > 1) else
+                            Post.approved.in_([2])
                         ),
                         (
                             Post.draft if draft is True else True

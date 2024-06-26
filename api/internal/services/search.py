@@ -139,9 +139,9 @@ class SearchService:
         page,
         order_by,
         way,
-        approved,
         draft,
         archived,
+        approved,
     ):
         res = []
         posts = await self.post_service.search_posts(
