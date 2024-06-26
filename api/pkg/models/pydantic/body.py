@@ -1,11 +1,14 @@
+from re import L
 from typing import Literal, Optional
 from uuid import UUID
+import uuid
 from fastapi import UploadFile
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from pydantic.networks import AnyUrl
 from pydantic_core import Url
 
 from api.configuration.as_form import as_form
+from api.internal.routes import tourism
 from api.pkg.models.pydantic import QueryModel
 
 
@@ -16,9 +19,6 @@ class UserBaseFields(BaseModel):
     nickname: str = Field(
         examples=["nickname"], pattern=r"[\w!?-]+", min_length=6, max_length=32
     )
-    password: str = Field(
-        examples=["password"], pattern=r"[\w!?-]+", min_length=6, max_length=32
-    )
     first_name: str
     last_name: str
 
@@ -27,6 +27,9 @@ class UserBaseFields(BaseModel):
 class UserRegister(UserBaseFields):
     """Класс данных для регистрации"""
 
+    password: str = Field(
+        examples=["password"], pattern=r"[\w!?-]+", min_length=6, max_length=32
+    )
     password_repeat: str = Field(
         examples=["password"], pattern=r"[\w!?-]+", min_length=6, max_length=32
     )
@@ -45,6 +48,18 @@ class UserUpdate(UserBaseFields):
     avatar: UploadFile
 
 
+class UserPasswordUpdate(BaseModel):
+    current_password: str = Field(
+        examples=["password"], pattern=r"[\w!?-]+", min_length=6, max_length=32
+    )
+    new_password: str = Field(
+        examples=["password"], pattern=r"[\w!?-]+", min_length=6, max_length=32
+    )
+    new_password_repeat: str = Field(
+        examples=["password"], pattern=r"[\w!?-]+", min_length=6, max_length=32
+    )
+
+
 @as_form
 class UserActivate(BaseModel):
     username: str
@@ -56,13 +71,32 @@ class PostCreate(BaseModel):
     """Класс полей для создания поста"""
 
     region: int
-    tourist_type: int
+    tourism_type: int
     name: str
     header: str
+    longitude: float | None = Field(None)
+    latitude: float | None = Field(None)
+    link: str | None = Field(None)
     body: str
-    lat: float
-    long: float
-    link: str
+    draft: bool = Field(False)
+
+
+@as_form
+class PostUpdate(BaseModel):
+    id: uuid.UUID
+    region: int
+    tourism_type: int
+    name: str
+    header: str
+    longitude: float | None = Field(None)
+    latitude: float | None = Field(None)
+    link: str | None = Field(None)
+    body: str
+
+
+class PostHashtagCreateDelete(BaseModel):
+    id: uuid.UUID
+    tag: int
 
 
 @as_form
@@ -74,35 +108,49 @@ class PostComment(BaseModel):
     contents: str
 
 
-@as_form
-class PostDraft(BaseModel):
-    """Класс полей для пометки поста как черновик"""
-
-    id: UUID
+class PostRate(BaseModel):
+    id: uuid.UUID
+    rating: float
 
 
-@as_form
-class PostArchive(BaseModel):
-    """Класс полей для пометки поста как архивный"""
+class SearchQueryParams(BaseModel):
+    s: str = Field("", description="Search string")
+    # way: Literal["asc", "desc"] = Field("desc", description="sort order")
+    typ: Literal["1", "2", "3", "4"] = Field(
+        "1",
+        description="Search type; 1 - posts, 2 - regions, 3 - tourism_types, 4 - users",
+    )
+    # order_by: Literal["created_at", "rating", "nickname", "name"] = Field(
+    #     "created_at", description="Sort by"
+    # )
+    # region: list[int] = Field([], description="Search posts by region; default is ANY")
+    # rating: float | None = Field(
+    #     None,
+    #     description="Seach posts by rating (must be higher or equal); default is ANY",
+    # )
+    # tourism_type: list[int] = Field(
+    #     [], description="Search posts by tourism type; default is ANY"
+    # )
+    # author: list[uuid.UUID] = Field(
+    #     [], description="Search posts by author; default is ANY"
+    # )
 
-    id: UUID
 
-
-class PostSearchQuery(QueryModel):
-    """Класс полей для поиска постов по параметру"""
-
-    region_id: Optional[int] = None
-    tourism_type: Optional[int] = None
-    order_by: Literal["created_at", "rating"]
-    way: Literal["asc", "desc"]
-    timeframe: Literal["1d", "7d", "30d", "all"]
-
-
-class UserSearchQuery(QueryModel):
-    """Класс полей для поиска пользователя по параметру"""
-
-    region: Optional[int] = None
-    rating: Optional[int] = None
-    order_by: Literal["created_at", "rating", "location"]
-    way: Literal["asc", "desc"]
-    age: Literal["30d", "180d", "360d", "all"]
+class SearchQueryPostParams(BaseModel):
+    q: str = Field("", description="Search string")
+    order_by: Literal["created_at", "rating", "nickname", "name"] = Field(
+        "created_at", description="Sort by"
+    )
+    region: list[int] = Field([], description="Search posts by region; default is ANY")
+    rating: float | None = Field(
+        0,
+        description="Seach posts by rating (must be higher or equal); default is ANY",
+    )
+    tourism_type: list[int] = Field(
+        [], description="Search posts by tourism type; default is ANY"
+    )
+    author: list[uuid.UUID] = Field(
+        [], description="Search posts by author; default is ANY"
+    )
+    way: Literal["asc", "desc"] = Field("desc", description="sort order")
+    page: int = Field(1)

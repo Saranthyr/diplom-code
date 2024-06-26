@@ -20,15 +20,21 @@ class PostHashtagRepository:
             return res
 
     async def create(self, uid, tag):
-        async with self.session_factory() as s:
-            post_tag = PostHashtag(post_id=uid, tag=tag)
-            s.add(post_tag)
+        try:
+            async with self.session_factory() as s:
+                post_tag = PostHashtag(post_id=uid, tag=tag)
+                s.add(post_tag)
+        except Exception:
+            pass
         return 0
 
     async def delete(self, uid, tag):
-        async with self.session_factory() as s:
-            stmt = delete(PostHashtag).where(
-                and_(PostHashtag.post_id == uid, PostHashtag.tag == tag)
-            )
-            await s.execute(stmt)
+        try:
+            async with self.session_factory() as s:
+                stmt = delete(PostHashtag).where(
+                    and_(PostHashtag.post_id == uid, PostHashtag.tag == tag)
+                )
+                await s.execute(stmt)
+        except Exception:
+            pass
         return 0

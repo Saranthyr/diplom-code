@@ -36,3 +36,12 @@ class RatingService:
 
     async def read_all_for_post(self, id):
         return await self.repository.read_all(id)
+
+    async def read_count(self, id):
+        return await self.repository.read_count(id)
+
+    async def read_total(self, id):
+        return await self.repository.read_total(id)
+
+    async def delete(self, id, user_id):
+        return await self.repository.delete(id, user_id)

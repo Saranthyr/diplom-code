@@ -45,80 +45,70 @@ class MongoDBBase:
         self, collection: AsyncIOMotorCollection, base_comment: int | None = None
     ):
         name = collection.name
-        data = collection.aggregate([
-  {
-    "$match": {
-      "parent_comment_id": base_comment
-      
-    }
-  },
-  {
-    "$lookup": {
-      "from": name,
-      "let": {
-        "comment_id": "$_id"
-      },
-      "pipeline": [
-        {
-          "$match": {
-            "$expr": {
-              "$eq": [
-                "$parent_comment_id",
-                "$$comment_id"
-              ]
-            }
-            
-          }
-        },
-        {
-          "$lookup": {
-            "from": name,
-            "let": {
-              "reply_id": "$_id"
-            },
-            "pipeline": [
-              {
-                "$match": {
-                  "$expr": {
-                    "$eq": [
-                      "$parent_comment_id",
-                      "$$reply_id"
-                    ]
-                  }
-                  
-                }
-              }
-            ],
-            "as": "replies"
-          }
-        }
-      ],
-      "as": "replies"
-    }
-  },
-  {
-    "$project": {
-      "_id": 1,
-      "content": 1,
-      "user": 1,
-      "created_at": 1,
-      "replies": {
-        "$map": {
-          "input": "$replies",
-          "as": "reply",
-          "in": {
-            "_id": "$$reply._id",
-            "content": "$$reply.content",
-            "user": "$$reply.user",
-            "created_at": "$$reply.created_at",
-            "replies": "$$reply.replies"
-          }
-        }
-      }
-    }
-  },
-  {
-    "$unset": "replies.replies.parent_comment_id"
-  }
-])
+        data = collection.aggregate(
+            [
+                {"$match": {"parent_comment_id": base_comment}},
+                {
+                    "$lookup": {
+                        "from": name,
+                        "let": {"comment_id": "$_id"},
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "$expr": {
+                                        "$eq": ["$parent_comment_id", "$$comment_id"]
+                                    }
+                                }
+                            },
+                            {
+                                "$lookup": {
+                                    "from": name,
+                                    "let": {"reply_id": "$_id"},
+                                    "pipeline": [
+                                        {
+                                            "$match": {
+                                                "$expr": {
+                                                    "$eq": [
+                                                        "$parent_comment_id",
+                                                        "$$reply_id",
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "as": "replies",
+                                }
+                            },
+                        ],
+                        "as": "replies",
+                    }
+                },
+                {
+                    "$project": {
+                        "_id": 1,
+                        "content": 1,
+                        "user": 1,
+                        "created_at": 1,
+                        "replies": {
+                            "$map": {
+                                "input": "$replies",
+                                "as": "reply",
+                                "in": {
+                                    "_id": "$$reply._id",
+                                    "content": "$$reply.content",
+                                    "user": "$$reply.user",
+                                    "created_at": "$$reply.created_at",
+                                    "replies": "$$reply.replies",
+                                },
+                            }
+                        },
+                    }
+                },
+                {"$unset": "replies.replies.parent_comment_id"},
+            ]
+        )
         return await data.to_list(None)
+
+    async def get_comment_author(self, collection: AsyncIOMotorCollection, id: int):
+        comment = await collection.find_one({"_id": id})
+        return comment["author"]

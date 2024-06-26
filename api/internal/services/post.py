@@ -5,111 +5,98 @@ from uuid import UUID, uuid4
 
 from passlib.context import CryptContext
 
+from api.internal.repos.postgres.posts import PostRepository
 from api.pkg.models.base.exception import BaseAPIException
 from api.configuration.security import decode_token
 from api.pkg.models.base.enums import TimeframeEnum
 
 
 class PostService:
-    def __init__(self, post_repository) -> None:
+    def __init__(self, post_repository: PostRepository) -> None:
         self.repository = post_repository
 
     async def create(
         self,
-        token,
+        author,
         region,
-        tourist_type,
+        tourism_type,
         name,
         header,
-        body,
         lat,
         long,
         link,
-        thumbnail_id,
+        thumbnail,
+        body,
+        draft,
     ):
-        decoded = await decode_token(token)
-        author = UUID(decoded["sub"])
         return await self.repository.create(
             uuid4(),
             region,
-            tourist_type,
+            tourism_type,
             name,
             header,
-            body,
             author,
             lat,
             long,
             link,
-            thumbnail_id,
+            thumbnail,
+            body,
+            draft,
         )
+
+    async def update(
+        self,
+        id,
+        name,
+        header,
+        body,
+        longitude,
+        latitude,
+        link,
+        region,
+        tourism_type,
+        thumbnail,
+    ):
+        data = {
+            "name": name,
+            "header": header,
+            "body": body,
+            "longitude": longitude,
+            "latitude": latitude,
+            "link": link,
+            "region": region,
+            "tourism_type": tourism_type,
+        }
+        if thumbnail is not None:
+            data["thumbnail"] = thumbnail
+        return await self.repository.update(id, data)
 
     async def read(self, id):
         return await self.repository.read(id)
 
-    async def delete(self, token, id):
-        decoded = await decode_token(token)
-        user = UUID(decoded["sub"])
-        author = await self.repository.read_post_author(id)
-        if user == author:
-            await self.repository.delete(id)
-            return 0
-        raise BaseAPIException
+    async def delete(self, id):
+        return await self.repository.delete_post(id)
 
-    async def approve_post(self, id):
-        return await self.repository.approve_post(id)
+    async def set_rating(self, id, rating):
+        return await self.repository.set_rating(id, rating)
 
-    async def all(self):
-        return await self.repository.all()
+    async def draft(self, id):
+        return await self.repository.draft(id)
 
-    async def read_all(
+    async def archive(self, id):
+        return await self.repository.archive(id)
+
+    async def search_posts(
         self,
-        region_id: int | None,
-        tourism_type: int | None,
-        order_by: Literal["created_at", "rating"],
-        way: Literal["asc", "desc"],
-        timeframe: Literal["1d", "7d", "30d", "all"],
+        s,
+        region=None,
+        tourism_type=None,
+        rating=0,
+        author=None,
+        order_by="created_at",
+        way="desc",
+        page=1,
     ):
-        tf = None
-
-        match timeframe:
-            case "1d":
-                tf = TimeframeEnum.DAY.value
-            case "7d":
-                tf = TimeframeEnum.WEEK.value
-            case "30d":
-                tf = TimeframeEnum.MONTH.value
-            case _:
-                pass
-        if region_id:
-            return await self.repository.read_all_by_region_id(
-                region_id, order_by, way, tf
-            )
-        elif tourism_type:
-            return await self.repository.read_all_by_tourism_type(
-                tourism_type, order_by, way, tf
-            )
-        return await self.repository.read_all_by_both(
-            region_id, tourism_type, order_by, way, tf
+        return await self.repository.search_posts(
+            s, region, tourism_type, rating, author, order_by, way, page
         )
-
-    async def draft(self, token, id):
-        decoded = await decode_token(token)
-        user = UUID(decoded["sub"])
-        author = await self.repository.read_post_author(id)
-        if user == author:
-            await self.repository.draft(id)
-            return 0
-        raise BaseAPIException
-
-    async def archive(self, token, id):
-        decoded = await decode_token(token)
-        user = UUID(decoded["sub"])
-        author = await self.repository.read_post_author(id)
-        if user == author:
-            await self.repository.archive(id)
-            return 0
-        raise BaseAPIException
-
-    async def calculate_rating(self, id, ratings):
-        rating = ratings // len(ratings)
-        return await self.repository.update_rating(id, rating)

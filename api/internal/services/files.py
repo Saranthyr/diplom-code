@@ -6,12 +6,13 @@ from uuid import UUID, uuid4
 from passlib.context import CryptContext
 from sqlalchemy_file import File as SQLAFile
 
+from api.internal.repos.postgres.files import FileRepository
 from api.pkg.models.base.exception import BaseAPIException
 from api.configuration.security import decode_token
 
 
 class FileService:
-    def __init__(self, file_repo) -> None:
+    def __init__(self, file_repo: FileRepository) -> None:
         self.repository = file_repo
 
     async def create_file(self, file):

@@ -1,7 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Union
-from uuid import UUID
-
-from sqlalchemy import and_, delete, or_, select, update
+from sqlalchemy import and_, delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.pkg.models.base.exception import BaseAPIException
@@ -64,3 +61,26 @@ class RatingRepository:
             res = await s.execute(stmt)
             res = res.scalars().all()
             return res
+
+    async def read_count(self, id):
+        async with self.session_factory() as s:
+            stmt = select(func.count(PostRating.user_id)).where(
+                PostRating.post_id == id
+            )
+            return (await s.execute(stmt)).scalar_one()
+
+    async def read_total(self, id):
+        async with self.session_factory() as s:
+            stmt = select(func.sum(PostRating.rating)).where(PostRating.post_id == id)
+            return (await s.execute(stmt)).scalar_one()
+
+    async def delete(self, id, user_id):
+        try:
+            async with self.session_factory() as s:
+                stmt = delete(PostRating).where(
+                    and_(PostRating.post_id == id, PostRating.user_id == user_id)
+                )
+                await s.execute(stmt)
+        except Exception:
+            pass
+        return 0

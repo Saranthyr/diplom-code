@@ -12,25 +12,31 @@ class RegionRepository:
     def __init__(self, session_factory: AsyncSession):
         self.session_factory = session_factory
 
-    async def create(self, name, long, lat):
-        async with self.session_factory() as s:
-            region = Region(
-                name=name, coordinates_longitude=long, coordinates_latitude=lat
-            )
-            s.add(region)
-            await s.commit()
-            return 0
-
     async def read(self, id):
         async with self.session_factory() as s:
-            stmt = select(Region).where(Region.id == id)
+            stmt = select(
+                Region.id,
+                Region.name,
+                Region.description,
+                Region.longitude,
+                Region.latitude,
+                Region.thumbnail,
+            ).where(Region.id == id)
             res = await s.execute(stmt)
-            res = res.mappings().one_or_none()
+            res = res.mappings().first()
             return res
 
     async def read_all(self):
         async with self.session_factory() as s:
-            stmt = select(Region)
+            stmt = select(Region.id, Region.name)
             res = await s.execute(stmt)
             res = res.mappings().all()
             return res
+
+    async def search(self, q):
+        async with self.session_factory() as s:
+            stmt = select(
+                Region.id, Region.name, Region.thumbnail, Region.description
+            ).where(Region.name.ilike(f"%{q}%"))
+            res = await s.execute(stmt)
+            return res.mappings().all()

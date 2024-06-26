@@ -4,6 +4,8 @@ import logging
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
+from api.pkg.models.base.exception import BaseAPIException
+
 
 class Database:
     """Класс подключения к базе данных"""
@@ -15,7 +17,7 @@ class Database:
             uri (str): адресная ссылка подключения к базе
         """
         self.db_uri = uri
-        self.engine = create_async_engine(self.db_uri)
+        self.engine = create_async_engine(self.db_uri, echo=True)
         self.session_factory = async_sessionmaker(
             self.engine, class_=AsyncSession, expire_on_commit=False
         )
@@ -34,8 +36,8 @@ class Database:
             try:
                 yield session
                 await session.commit()
-            except Exception as e:
-                logging.log(1, f"Session rollback because of exception {e}")
+            except BaseAPIException as e:
                 await session.rollback()
+                raise e
             finally:
                 await session.close()

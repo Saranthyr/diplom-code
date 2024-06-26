@@ -14,7 +14,9 @@ class TourismTypeRepository:
 
     async def read(self, id):
         async with self.session_factory() as s:
-            stmt = select(TourismType).where(TourismType.id == id)
+            stmt = select(TourismType.id, TourismType.name, TourismType.photo).where(
+                TourismType.id == id
+            )
             res = await s.execute(stmt)
             res = res.mappings().one_or_none()
             return res
@@ -25,3 +27,11 @@ class TourismTypeRepository:
             res = await s.execute(stmt)
             res = res.mappings().all()
             return res
+
+    async def search(self, q):
+        async with self.session_factory() as s:
+            stmt = select(TourismType.id, TourismType.name, TourismType.photo).where(
+                TourismType.name.ilike(f"%{q}%")
+            )
+            res = await s.execute(stmt)
+            return res.mappings().all()

@@ -13,8 +13,7 @@ from sqlalchemy.dialects.postgresql import (
     TIMESTAMP,
     BOOLEAN,
     REAL,
-    JSON,
-    NUMERIC
+    NUMERIC,
 )
 from sqlalchemy_file import FileField
 
@@ -27,10 +26,16 @@ class CoordinateFields:
     latitude: Mapped[float] = mapped_column(NUMERIC(5, 2))
 
 
-class User(Base):
+class IdPk:
+    pk: Mapped[int] = mapped_column(
+        Identity(True, start=1, increment=1), primary_key=True
+    )
+
+
+class User(Base, IdPk):
     __tablename__ = "users"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(UUID, unique=True, default=uuid.uuid4)
     username: Mapped[str] = mapped_column(VARCHAR(64), unique=True)
     password: Mapped[str] = mapped_column(VARCHAR(256))
     nickname: Mapped[str] = mapped_column(VARCHAR(64), unique=True)
@@ -52,12 +57,17 @@ class User(Base):
     posts_total: Mapped[int] = mapped_column(INTEGER, default=0)
     location: Mapped[int] = mapped_column(ForeignKey("regions.id"))
     link_tg: Mapped[str] = mapped_column(VARCHAR(128))
+    notification_channel: Mapped[int] = mapped_column(INTEGER, default=1)
     role: Mapped[int] = mapped_column(ForeignKey("user_roles.id"))
     rating: Mapped[float] = mapped_column(REAL, default=0)
     active: Mapped[bool] = mapped_column(BOOLEAN, server_default=expression.false())
 
-    _avatar: Mapped["File"] = relationship("File", foreign_keys=[avatar], single_parent=True)
-    _header: Mapped["File"] = relationship("File", foreign_keys=[header], single_parent=True)
+    _avatar: Mapped["File"] = relationship(
+        "File", foreign_keys=[avatar], single_parent=True
+    )
+    _header: Mapped["File"] = relationship(
+        "File", foreign_keys=[header], single_parent=True
+    )
     _role: Mapped["UserRole"] = relationship("UserRole")
 
 
@@ -69,59 +79,71 @@ class Region(Base, CoordinateFields):
     thumbnail: Mapped[uuid.UUID] = mapped_column(ForeignKey("files.id"))
     description: Mapped[str] = mapped_column(TEXT)
 
-    _thumbnail: Mapped["File"] = relationship(single_parent=True, foreign_keys=[thumbnail],
-                                              cascade='all, delete-orphan')
-    photos: Mapped[list['File']] = relationship(single_parent=True,
-                                                secondary='region_photos',
-                                                cascade='all, delete-orphan')
+    _thumbnail: Mapped["File"] = relationship(
+        single_parent=True, foreign_keys=[thumbnail], cascade="all, delete-orphan"
+    )
+    photos: Mapped[list["File"]] = relationship(
+        single_parent=True, secondary="region_photos", cascade="all, delete-orphan"
+    )
 
 
 class RegionPhoto(Base):
-    __tablename__ = 'region_photos'
+    __tablename__ = "region_photos"
 
-    region_id: Mapped[int] = mapped_column(ForeignKey('regions.id',), primary_key=True)
-    photo_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('files.id'), primary_key=True)
+    region_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "regions.id",
+        ),
+        primary_key=True,
+    )
+    photo_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("files.id"), primary_key=True
+    )
 
 
-class File(Base):
+class File(Base, IdPk):
     __tablename__ = "files"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(UUID, unique=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(VARCHAR(128))
     content: Mapped[dict[str, Any]] = mapped_column(
-        FileField(upload_storage='default',
-                  processors=[UrlProcessor()])
+        FileField(upload_storage="default", processors=[UrlProcessor()])
     )
     created_at: Mapped[datetime.datetime] = mapped_column(
         TIMESTAMP, server_default=func.now()
     )
 
 
-class Post(Base, CoordinateFields):
+class Post(Base, CoordinateFields, IdPk):
     __tablename__ = "posts"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(UUID, unique=True, default=uuid.uuid4)
     region: Mapped[int] = mapped_column(ForeignKey("regions.id"))
     tourism_type: Mapped[int] = mapped_column(ForeignKey("tourism_types.id"))
     name: Mapped[str] = mapped_column(VARCHAR(128))
     header: Mapped[str] = mapped_column(VARCHAR(512))
     body: Mapped[str] = mapped_column(TEXT)
     author: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    rating: Mapped[float] = mapped_column(NUMERIC(2, 1), default=0)
     created_at: Mapped[datetime.datetime] = mapped_column(
         TIMESTAMP, server_default=func.now()
     )
     link: Mapped[str] = mapped_column(VARCHAR(128))
     draft: Mapped[bool] = mapped_column(BOOLEAN, default=expression.true())
     approved: Mapped[int] = mapped_column(INTEGER, default=1)
+    archived: Mapped[bool] = mapped_column(BOOLEAN, default=expression.false())
     thumbnail: Mapped[uuid.UUID] = mapped_column(ForeignKey("files.id"))
 
-    _thumbnail: Mapped["File"] = relationship(primaryjoin="Post.thumbnail == File.id", single_parent=True)
-    attachments: Mapped[list["File"]] = relationship(secondary="post_attachments",
-                                                     single_parent=True,
-                                                     cascade='all, delete-orphan')
+    _thumbnail: Mapped["File"] = relationship(
+        primaryjoin="Post.thumbnail == File.id", single_parent=True
+    )
+    attachments: Mapped[list["File"]] = relationship(
+        secondary="post_attachments", single_parent=True, cascade="all, delete-orphan"
+    )
     _tourism_type: Mapped["TourismType"] = relationship()
     _region: Mapped["Region"] = relationship()
-    tags: Mapped[list['Hashtag']] = relationship(secondary='post_hashtags')
+    tags: Mapped[list["Hashtag"]] = relationship(secondary="post_hashtags")
+    _author: Mapped["User"] = relationship()
 
 
 class PostAttachments(Base):
@@ -145,7 +167,7 @@ class PostRating(Base):
 
     post_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("posts.id"), primary_key=True)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), primary_key=True)
-    rating: Mapped[int] = mapped_column(default=1)
+    rating: Mapped[float] = mapped_column(NUMERIC(2, 1), default=1)
 
 
 class Hashtag(Base):
@@ -160,9 +182,6 @@ class UserRole(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(VARCHAR(64), unique=True)
-    
-    async def __admin_repr__(self, request):
-        return f'{self.name}'
 
 
 class TourismType(Base):
@@ -171,5 +190,14 @@ class TourismType(Base):
     id: Mapped[int] = mapped_column(Identity(start=1, increment=1), primary_key=True)
     name: Mapped[str] = mapped_column(VARCHAR(64), unique=True)
     photo: Mapped[uuid.UUID] = mapped_column(ForeignKey("files.id"), nullable=True)
-    
-    _photo: Mapped['File'] = relationship(single_parent=True)
+
+    _photo: Mapped["File"] = relationship(single_parent=True)
+
+
+class UserTelegeramChat(Base):
+    __tablename__ = "user_telegram_chats"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"), primary_key=True
+    )
+    chat: Mapped[int] = mapped_column(INTEGER, nullable=False)

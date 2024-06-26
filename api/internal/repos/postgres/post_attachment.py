@@ -22,18 +22,24 @@ class PostAttachmentRepository:
             return res
 
     async def create(self, uid, attachment):
-        async with self.session_factory() as s:
-            attachment = PostAttachments(post_id=uid, attachment=attachment)
-            s.add(attachment)
+        try:
+            async with self.session_factory() as s:
+                attachment = PostAttachments(post_id=uid, attachment=attachment)
+                s.add(attachment)
+        except Exception:
+            pass
         return 0
 
     async def delete(self, uid, attachment):
-        async with self.session_factory() as s:
-            stmt = delete(PostAttachments).where(
-                and_(
-                    PostAttachments.post_id == uid,
-                    PostAttachments.attachment == attachment,
+        try:
+            async with self.session_factory() as s:
+                stmt = delete(PostAttachments).where(
+                    and_(
+                        PostAttachments.post_id == uid,
+                        PostAttachments.attachment == attachment,
+                    )
                 )
-            )
-            await s.execute(stmt)
+                await s.execute(stmt)
+        except Exception:
+            pass
         return 0

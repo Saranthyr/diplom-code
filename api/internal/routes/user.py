@@ -1,15 +1,12 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, Request, UploadFile, status
+from fastapi import APIRouter, Depends, UploadFile, status
 from fastapi.responses import HTMLResponse
-from fastapi.security import OAuth2PasswordRequestForm
 from dependency_injector.wiring import inject, Provide
-from httpx import request
 
 from api.configuration.security import oauth2_scheme
-from api.internal.services.auth import AuthService
-from api.internal.services.user import UserService
-from api.pkg.models.pydantic.body import UserUpdate
+from api.internal.services.user_main import UserMainService
+from api.pkg.models.pydantic.body import UserPasswordUpdate, UserUpdate
 from api.pkg.models.containers import Container
 from api.pkg.models.pydantic.responses import UserResponse
 
@@ -21,27 +18,28 @@ router = APIRouter(prefix="/user")
 async def update(
     token: Annotated[str, Depends(oauth2_scheme)],
     body: UserUpdate = Depends(),
-    user_service: UserService = Depends(Provide[Container.user_service]),
+    user_service: UserMainService = Depends(Provide[Container.user_main_service]),
 ):
-    return await user_service.update_user(token, **body.model_dump())
+    return await user_service.update_base(token, **body.model_dump())
 
 
-@router.get("/update", response_model=UserResponse)
+@router.put("/update_password", response_model=UserResponse)
 @inject
-async def read_update(
+async def update_password(
     token: Annotated[str, Depends(oauth2_scheme)],
-    user_service: UserService = Depends(Provide[Container.user_service]),
+    body: UserPasswordUpdate,
+    user_service: UserMainService = Depends(Provide[Container.user_main_service]),
 ):
-    return await user_service.read_user(token)
+    return await user_service.update_password(token, **body.model_dump())
 
 
 @router.delete("/delete")
 @inject
 async def delete(
     token: Annotated[str, Depends(oauth2_scheme)],
-    user_service: UserService = Depends(Provide[Container.user_service]),
+    user_service: UserMainService = Depends(Provide[Container.user_main_service]),
 ):
-    return await user_service.delete_user(token)
+    return await user_service.delete(token)
 
 
 @router.get(
@@ -53,16 +51,72 @@ async def delete(
 @inject
 async def read_curr(
     token: Annotated[str, Depends(oauth2_scheme)],
-    user_service: UserService = Depends(Provide[Container.user_service]),
+    user_service: UserMainService = Depends(Provide[Container.user_main_service]),
 ):
-    return await user_service.read_user(token)
+    return await user_service.read(token)
 
 
-@router.get("/{nickname}", response_class=HTMLResponse, status_code=status.HTTP_200_OK)
+@router.delete("/avatar")
+@inject
+async def delete_avatar(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    user_service: UserMainService = Depends(Provide[Container.user_main_service]),
+):
+    return await user_service.delete_avatar(token)
+
+
+@router.put("/avatar")
+@inject
+async def put_avatar(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    avatar: UploadFile,
+    user_service: UserMainService = Depends(Provide[Container.user_main_service]),
+):
+    return await user_service.update_avatar(token, avatar)
+
+
+@router.put("/header")
+@inject
+async def put_header(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    header: UploadFile,
+    user_service: UserMainService = Depends(Provide[Container.user_main_service]),
+):
+    return await user_service.update_header(token, header)
+
+
+@router.delete("/header")
+@inject
+async def delete_header(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    user_service: UserMainService = Depends(Provide[Container.user_main_service]),
+):
+    return await user_service.delete_header(token)
+
+
+@router.get("/notification_channel")
+@inject
+async def notification_get(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    user_service: UserMainService = Depends(Provide[Container.user_main_service]),
+):
+    return await user_service.notification_channel_get(token)
+
+
+@router.post("/notification_channel")
+@inject
+async def notification_post(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    channel: int,
+    user_service: UserMainService = Depends(Provide[Container.user_main_service]),
+):
+    return await user_service.notification_channel_post(token, channel)
+
+
+@router.get("/{nickname}", status_code=status.HTTP_200_OK)
 @inject
 async def read(
-    nickname: str, user_service: UserService = Depends(Provide[Container.user_service])
+    nickname: str,
+    user_service: UserMainService = Depends(Provide[Container.user_main_service]),
 ):
-    return templates.TemplateResponse(
-        name="profile.html", context=await user_service.read_user(nickname)
-    )
+    return await user_service.read_nickname(nickname)

@@ -22,9 +22,9 @@ class FileRepository:
 
     async def read(self, id):
         async with self.session_factory() as s:
-            stmt = select(File).where(File.id == id)
+            stmt = select(File.content).where(File.id == id)
             res = await s.execute(stmt)
-            res = res.mappings().one_or_none()
+            res = res.scalar_one()
             return res
 
     async def delete(self, id):

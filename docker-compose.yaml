@@ -54,6 +54,7 @@ services:
       - ./docker_configs/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
       - rabbitmq:/var/lib/rabbitmq
     ports:
+      - 5672:5672
       - 15672:15672
     networks:
       - rabbitmq
@@ -168,6 +169,27 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  tg_bot:
+    build:
+      context: .
+      dockerfile: docker/tg_bot/Dockerfile
+
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+
+    volumes:
+      - ./backend_configs/bot_config/config.ini:/configs/config.ini
+    env_file:
+      - ./backend_configs/bot_config/.env
+    
+    networks:
+      - postgres
+      - rabbitmq
+      - redis
+    command: 'bash -c "source ./.venv/bin/activate && python ./main.py"'
 
 networks:
   rabbitmq:

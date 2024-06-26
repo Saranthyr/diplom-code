@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime
 import os
 import time
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 
 from dotenv import load_dotenv
 from jose import jwt
@@ -42,7 +42,9 @@ async def create_token(
     return token
 
 
-async def decode_token(token: str) -> Dict[str, int | str]:
+async def decode_token(
+    token: str, options: dict[str, Any] | None = None
+) -> Dict[str, int | str]:
     """Функция декодирования токена
 
     Args:
@@ -51,7 +53,9 @@ async def decode_token(token: str) -> Dict[str, int | str]:
     Returns:
         Dict[str, int|str]: Полезная нагрузка токена
     """
-    decoded = jwt.decode(token, os.environ['JWT_SECRET'], algorithms="HS384")
+    decoded = jwt.decode(
+        token, os.environ["JWT_SECRET"], algorithms="HS384", options=options
+    )
     return decoded
 
 
@@ -98,25 +102,25 @@ async def validate_refresh_token(token: str, access_jti: str) -> bool:
     """
     valid, decoded = await validate_token_iat(token=token)
     if valid:
-        if decoded["name"] == access_jti:
+        if decoded["sub"] == access_jti:
             return True
     return False
 
 
-async def validate_user_role(token: str, required_role: list[int]) -> bool:
-    """Функция проверки роли пользователя
+# async def validate_user_role(token: str, required_role: list[int]) -> bool:
+#     """Функция проверки роли пользователя
 
-    Args:
-        token (str): токен
-        required_role (list[int]): допустимые роли
+#     Args:
+#         token (str): токен
+#         required_role (list[int]): допустимые роли
 
-    Raises:
-        NoPermission: возвращает ошибку, если пользователь не имеет доступа
+#     Raises:
+#         NoPermission: возвращает ошибку, если пользователь не имеет доступа
 
-    Returns:
-        bool: пользователь имеет доступ
-    """
-    decoded = await decode_token(token=token)
-    if decoded["role"] not in required_role:
-        raise NoPermission
-    return True
+#     Returns:
+#         bool: пользователь имеет доступ
+#     """
+#     decoded = await decode_token(token=token)
+#     if decoded["role"] not in required_role:
+#         raise NoPermission
+#     return True

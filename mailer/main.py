@@ -30,6 +30,34 @@ async def runner(
                                 await mailer.send_verification_code(op["email"])
                             except Exception as e:
                                 print(traceback.print_exception(e))
+                        case "new_comment":
+                            try:
+                                await mailer.send_new_comment_notif(
+                                    op["email"], op["post_name"]
+                                )
+                            except Exception as e:
+                                print(traceback.print_exception(e))
+                        case "response_comment":
+                            try:
+                                await mailer.send_comment_response_notif(
+                                    op["email"], op["post_name"]
+                                )
+                            except Exception as e:
+                                print(traceback.print_exception(e))
+                        case "post_published":
+                            try:
+                                await mailer.send_post_published(
+                                    op["email"], op["post_name"]
+                                )
+                            except Exception as e:
+                                print(traceback.print_exception(e))
+                        case "post_rejected":
+                            try:
+                                await mailer.send_post_rejected(
+                                    op["email"], op["post_name"]
+                                )
+                            except Exception as e:
+                                print(traceback.print_exception(e))
 
 
 def main():

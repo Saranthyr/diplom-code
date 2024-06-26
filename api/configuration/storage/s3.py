@@ -11,7 +11,9 @@ class S3Storage(Resource):
         self.secret_key = aws_secret_key
         self.host = host
         self.port = port
-        self.stor = S3StorageDriver(self.access_key, self.secret_key, False, self.host, self.port)
+        self.stor = S3StorageDriver(
+            self.access_key, self.secret_key, False, self.host, self.port
+        )
         try:
             self.stor.create_container("default")
         except Exception:
