@@ -5,6 +5,7 @@ from uuid import UUID, uuid4
 
 from passlib.context import CryptContext
 
+from api.internal.repos.postgres.ratings import RatingRepository
 from api.pkg.models.base.enums import TimeframeEnum
 from api.pkg.models.base.exception import BaseAPIException
 from api.pkg.models.exceptions import (
@@ -25,7 +26,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class RatingService:
-    def __init__(self, ratings_repo) -> None:
+    def __init__(self, ratings_repo: RatingRepository) -> None:
         self.repository = ratings_repo
 
     async def create(self, post_id, user_id, rating):
@@ -41,7 +42,10 @@ class RatingService:
         return await self.repository.read_count(id)
 
     async def read_total(self, id):
-        return await self.repository.read_total(id)
+        res = await self.repository.read_total(id)
+        if res is None:
+            return 0
+        return res
 
     async def delete(self, id, user_id):
         return await self.repository.delete(id, user_id)

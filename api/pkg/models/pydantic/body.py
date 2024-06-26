@@ -154,3 +154,8 @@ class SearchQueryPostParams(BaseModel):
     )
     way: Literal["asc", "desc"] = Field("desc", description="sort order")
     page: int = Field(1)
+    approved: list[int] = Field(
+        [],description='Approval status'
+    )
+    draft: bool = Field(False, description='Search for drafted posts')
+    archived: bool = Field(False, description="Search for archived posts")

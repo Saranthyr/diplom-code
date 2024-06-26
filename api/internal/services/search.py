@@ -130,11 +130,32 @@ class SearchService:
         return res
 
     async def post_search(
-        self, q, region, tourism_type, rating, author, page, order_by, way
+        self,
+        q,
+        region,
+        tourism_type,
+        rating,
+        author,
+        page,
+        order_by,
+        way,
+        approved,
+        draft,
+        archived,
     ):
         res = []
         posts = await self.post_service.search_posts(
-            q, region, tourism_type, rating, author, order_by, way, page
+            q,
+            region,
+            tourism_type,
+            rating,
+            author,
+            order_by,
+            way,
+            page,
+            approved,
+            draft,
+            archived,
         )
         for post in posts:
             thumbnail = await self.file_service.read_file(post["thumbnail"])

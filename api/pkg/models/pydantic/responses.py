@@ -96,7 +96,7 @@ class PostResponse(BaseModel):
     created_at: datetime.datetime
     link: str | None
     thumbnail: str
-    coordinates: tuple[float, float] | None
+    coordinates: tuple[float | None, float | None] | None
     author: "PostAuthorResponse"
     attachments: list[dict[UUID, str]]
     region: dict[int, str]

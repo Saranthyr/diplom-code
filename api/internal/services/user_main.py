@@ -5,6 +5,7 @@ from passlib.context import CryptContext
 
 from api.internal.services.files import FileService
 from api.internal.services.notification import NotificationService
+from api.internal.services.redis import Redis
 from api.internal.services.user import UserService
 from api.pkg.models.base.enums import TimeframeEnum
 from api.pkg.models.base.exception import BaseAPIException
@@ -27,10 +28,12 @@ class UserMainService:
         user_service: UserService,
         file_service: FileService,
         notification_service: NotificationService,
+        redis_service: Redis
     ) -> None:
         self.user_service = user_service
         self.file_service = file_service
         self.notication_service = notification_service
+        self.redis = redis_service
 
     async def update_base(
         self, token, nickname, first_name, last_name, about, location, link_tg
@@ -91,6 +94,9 @@ class UserMainService:
         res = [1]
         if await self.notication_service.available(curr_user) is True:
             res.append(2)
+        else:
+            code = await self.redis.get_tg_code(decoded['sub'])
+            res.append(int(code))
         return res
 
     async def notification_channel_post(self, token, channel):

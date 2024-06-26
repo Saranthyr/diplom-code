@@ -67,6 +67,9 @@ class UserView(ModelView):
         ),
     ]
 
+    def is_accessible(self, request: Request) -> bool:
+        return "1" == request.session.get('user_role', None)
+
     async def create(self, request: Request, data: Dict[str, Any]):
         session = request.state.session
         thumbnail = data["_avatar.content"][0]
@@ -120,6 +123,9 @@ class FileView(ModelView):
 class UserRoleView(ModelView):
     fields = [UserRole.name]
 
+    def is_accessible(self, request: Request) -> bool:
+        return "1" == request.session.get('user_role', None)
+
 
 class RegionView(ModelView):
     fields = [
@@ -151,6 +157,9 @@ class RegionView(ModelView):
             multiple=True,
         ),
     ]
+
+    def is_accessible(self, request: Request) -> bool:
+        return "1" == request.session.get('user_role', None)
 
     async def create(self, request: Request, data: Dict[str, Any]):
         session = request.state.session
@@ -244,6 +253,9 @@ class TourismTypeView(ModelView):
         ImageField("_photo.content", "Thumbnail_pic", exclude_from_detail=True),
     ]
 
+    def is_accessible(self, request: Request) -> bool:
+        return "1" == request.session.get('user_role', None)
+
     async def create(self, request: Request, data: Dict[str, Any]):
         session = request.state.session
         thumbnail = data["_photo.content"][0]
@@ -289,6 +301,9 @@ class TourismTypeView(ModelView):
 
 class TagView(ModelView):
     fields = [Hashtag.name]
+
+    def is_accessible(self, request: Request) -> bool:
+        return "1" == request.session.get('user_role', None)
 
 
 class PostView(ModelView):

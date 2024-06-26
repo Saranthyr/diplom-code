@@ -2,6 +2,7 @@ import os.path
 from pathlib import Path
 
 from fastapi import APIRouter, FastAPI, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy_file.storage import StorageManager
 from dependency_injector.wiring import Provide, inject
 from dotenv import load_dotenv
@@ -15,6 +16,7 @@ from .internal.routes.user import router as user
 from .internal.routes.searches import router as search
 from .internal.routes.regions import router as regions
 from .internal.routes.tourism import router as tourism
+from .internal.routes.hashtags import router as hashtags
 
 load_dotenv()
 
@@ -29,12 +31,20 @@ container.wire(
         ".internal.routes.regions",
         ".internal.routes.tourism",
         ".internal.routes.admin",
+        ".internal.routes.hashtags",
         "__main__",
     ]
 )
 container.init_resources()
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 admin = admin()
 
 # @app.options('/{rest_of_path:path}')
@@ -60,6 +70,7 @@ app.include_router(user)
 app.include_router(search)
 app.include_router(regions)
 app.include_router(tourism)
+app.include_router(hashtags)
 
 app.container = container
 admin.mount_to(app)

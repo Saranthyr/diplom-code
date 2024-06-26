@@ -20,7 +20,6 @@ async def start(update, context: ContextTypes.DEFAULT_TYPE):
     context.job_queue.run_once(test, 1)
 
 
-
 @inject
 async def link(
     update,
@@ -31,7 +30,7 @@ async def link(
     chat_id = update.effective_message.chat_id
 
     try:
-        user_id = uuid.UUID((await redis.get(context.args[0])).decode('utf-8'))
+        user_id = uuid.UUID((await redis.get(context.args[0])).decode("utf-8"))
 
         if user_id is None:
             await update.effective_message.reply_text("Incorrect code")
@@ -44,7 +43,7 @@ async def link(
             except Exception:
                 pass
         await redis.delete(context.args[0])
-
+        await update.effective_message.reply_text("Successfully linked your account!")
 
     except (IndexError, ValueError):
         await update.effective_message.reply_text("Usage: /link <code>")
@@ -66,12 +65,14 @@ async def test(
                 async with message.process():
                     op = json.loads(message.body)
                     async with database.session() as s:
-                        stmt = select(UserTelegeramChat.chat).where(UserTelegeramChat.user_id == uuid.UUID(op['user_id']))
+                        stmt = select(UserTelegeramChat.chat).where(
+                            UserTelegeramChat.user_id == uuid.UUID(op["user_id"])
+                        )
                         res = await s.execute(stmt)
                         chat_id = res.scalar_one()
-                    op['chat_id'] = chat_id
+                    op["chat_id"] = chat_id
                     await send_msg(context, op)
-                        
+
 
 async def send_msg(context, data):
     match data["action"]:
@@ -83,4 +84,4 @@ async def send_msg(context, data):
             text = f"Your post {data['post_name']} got a new comment"
         case "post_rejected":
             text = f"Your post {data['post_name']} got a new comment"
-    await context.bot.send_message(data['chat_id'], text=text)
+    await context.bot.send_message(data["chat_id"], text=text)

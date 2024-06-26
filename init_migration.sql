@@ -152,4 +152,36 @@ insert into "tourism_types" (id, name) overriding system value values (1, 'Пр�
 
 insert into "regions" (id, name, latitude, longitude) overriding system value values (1, 'Москва', 55.76, 37.62), (2, 'Петербург', 59.93, 30.34), (3, 'Крым', 45.04, 34.37), (4, 'Кавказ', 42.24, 43.97), (5, 'Урал', 56.52, 61.26), (6, 'Сибирь', 55.17, 73.89), (7, 'Байкал', 53.56, 108.17), (8, 'Камчатка', 53.41, 158.25), (9, 'Карелия', 61.92, 29.75), (10, 'Золотое кольцо', 57.99, 40.97);
 
-insert into "users" (id, username, password, first_name, last_name, nickname, role, active) values ('b3d1f532-aef0-4417-b888-39557ae0cdaf', 'admin@f-42.ru', '$2b$12$T0fF7PyvxZB.YxfiTIkUL.ETG9lTQ7QFxTV8LDaksluzpqAll2VK.', 'Admin', 'Admin', 'admin', 1, true);
+insert into "users" (id, username, password, first_name, last_name, nickname, role, active) values ('b3d1f532-aef0-4417-b888-39557ae0cdaf', 'admin@f-42.ru', '$2b$12$T0fF7PyvxZB.YxfiTIkUL.ETG9lTQ7QFxTV8LDaksluzpqAll2VK.', 'Admin', 'Admin', 'admin', 1, true), ('a6e53530-5c3c-448f-bc71-a49dc173898a', 'moderator@f-42.ru', '$2b$12$t5I7w3S2X/1KWuCqgJCNEOH45rQftGZglsxPJO3raQCY9qk7JNEJ6', 'Moderator', 'Moderator', 'moderator', 2, true);
+
+CREATE OR REPLACE FUNCTION posts_total()
+returns trigger as $$
+begin
+if new.approved = 2 then
+  update users
+  set posts_total = posts_total + 1
+  where id = new.author;
+end if;
+return NEW;
+END;
+$$ language plpgsql;
+
+create trigger tr_posts_total
+after update of approved on posts
+for each row
+execute FUNCTION posts_total();
+
+CREATE OR REPLACE FUNCTION user_rating()
+returns trigger as $$
+begin
+update users
+set rating = (select avg(rating)::numeric(2,1) from posts where author = new.author)
+where id = new.author;
+return new;
+end;
+$$ language plpgsql;
+
+create trigger tr_rating
+after update of rating on posts
+for each row
+execute function user_rating();

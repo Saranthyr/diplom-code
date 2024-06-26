@@ -163,6 +163,7 @@ class Container(DeclarativeContainer):
         user_service=user_service,
         file_service=file_service,
         notification_service=notification_service,
+        redis_service=redis_service
     )
 
     auth_service = Factory(

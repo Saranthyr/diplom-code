@@ -96,7 +96,10 @@ class PostService:
         order_by="created_at",
         way="desc",
         page=1,
+        approved=[2],
+        draft=None,
+        archived=None
     ):
         return await self.repository.search_posts(
-            s, region, tourism_type, rating, author, order_by, way, page
+            s, region, tourism_type, rating, author, order_by, way, page, approved, draft, archived
         )

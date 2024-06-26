@@ -1,9 +1,11 @@
 version: '3'
 services:
   api:
+    container_name: api
     build:
       context: .
       dockerfile: docker/api/Dockerfile
+    restart: on-failure
     volumes:
       - ./backend_configs/api_config/config.ini:/configs/config.ini
     env_file:
@@ -82,11 +84,17 @@ services:
     command: ["server", "-filer", "-s3", "-ip=0.0.0.0", "-volume.max=0", "-master.volumeSizeLimitMB=1024", '-s3.config', /configs/config.json]
     networks:
       - s3
+    healthcheck:
+      test: "exit 0"
+      interval: 30s
+      timeout: 5s
+      retries: 5
 
   postgres:
     build:
       context: .
       dockerfile: docker/postgres/Dockerfile
+    container_name: postgres
     volumes:
       - ./init_migration.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres:/var/lib/postgresql/data/pgdata
@@ -191,6 +199,18 @@ services:
       - redis
     command: 'bash -c "source ./.venv/bin/activate && python ./main.py"'
 
+  front:
+    build:
+      context: .
+      dockerfile: docker/front/Dockerfile
+    networks:
+      - default
+    depends_on:
+      - api
+    ports:
+      - 3000:3000
+    command: 'npm run dev'
+
 networks:
   rabbitmq:
     driver: bridge
@@ -203,7 +223,7 @@ networks:
   mongodb:
     driver: bridge
   default:
-    driver: host
+    driver: bridge
 
 volumes:
   s3:

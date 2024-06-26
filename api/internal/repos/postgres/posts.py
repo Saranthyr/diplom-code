@@ -102,7 +102,7 @@ class PostRepository:
         return 0
 
     async def search_posts(
-        self, q, region, tourism_type, rating, author, order_by, way, page
+        self, q, region, tourism_type, rating, author, order_by, way, page, approved, draft, archived
     ):
         async with self.session_factory() as s:
             stmt = (
@@ -138,6 +138,15 @@ class PostRepository:
                             if (author is not None and len(author) > 1)
                             else True
                         ),
+                        (
+                            Post.approved.in_(approved)
+                        ),
+                        (
+                            Post.draft if draft is True else True
+                        ),
+                        (
+                            Post.archived if archived is True else True
+                        )
                     )
                 )
                 .order_by(text(f"{order_by} {way}"))

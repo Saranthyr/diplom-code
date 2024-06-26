@@ -72,7 +72,7 @@ class RatingRepository:
     async def read_total(self, id):
         async with self.session_factory() as s:
             stmt = select(func.sum(PostRating.rating)).where(PostRating.post_id == id)
-            return (await s.execute(stmt)).scalar_one()
+            return (await s.execute(stmt)).scalar_one_or_none()
 
     async def delete(self, id, user_id):
         try:

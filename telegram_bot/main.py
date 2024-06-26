@@ -16,8 +16,7 @@ def main():
     container = Container()
     container.config.from_ini("/configs/config.ini")
     container.init_resources()
-    container.wire(modules=["internal.commands",
-                            "__main__"])
+    container.wire(modules=["internal.commands", "__main__"])
 
     application = Application.builder().token(os.environ["BOT_TOKEN"]).build()
 

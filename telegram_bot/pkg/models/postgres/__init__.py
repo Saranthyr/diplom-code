@@ -2,17 +2,14 @@ import uuid
 
 from sqlalchemy import ForeignKey, Identity
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.dialects.postgresql import (
-    INTEGER,
-    UUID
-)
+from sqlalchemy.dialects.postgresql import INTEGER, UUID
 
 from ..resources import Base
 
 
 class User(Base):
     __tablename__ = "users"
-    
+
     pk: Mapped[int] = mapped_column(
         Identity(True, start=1, increment=1), primary_key=True
     )
