@@ -16,7 +16,7 @@ from pkg.models.postgres import UserTelegeramChat
 
 
 async def start(update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Hi! Use /link <code> to link your account")
+    await update.message.reply_text("Добро пожаловать в бот сайта \"Внутренний туризм\". Пожалуйста, используйте комманду /link вместе с кодом активации бота, поступившим на Вашу почту.")
     context.job_queue.run_once(test, 1)
 
 
@@ -33,7 +33,7 @@ async def link(
         user_id = uuid.UUID((await redis.get(context.args[0])).decode("utf-8"))
 
         if user_id is None:
-            await update.effective_message.reply_text("Incorrect code")
+            await update.effective_message.reply_text("Неверный код!")
 
         async with database.session() as s:
             data = UserTelegeramChat(user_id=user_id, chat=chat_id)
@@ -43,10 +43,10 @@ async def link(
             except Exception:
                 pass
         await redis.delete(context.args[0])
-        await update.effective_message.reply_text("Successfully linked your account!")
+        await update.effective_message.reply_text("Ваш аккаунт успешно привязан!")
 
     except (IndexError, ValueError):
-        await update.effective_message.reply_text("Usage: /link <code>")
+        await update.effective_message.reply_text("Использование: /link <code>")
 
 
 @inject
@@ -77,11 +77,11 @@ async def test(
 async def send_msg(context, data):
     match data["action"]:
         case "new_comment":
-            text = f"Your post {data['post_name']} got a new comment"
+            text = f"Ваша статья {data['post_name']} получила новый комментарий"
         case "response_comment":
-            text = f"Your post {data['post_name']} got a new comment"
+            text = f"Ваша комментарий под статьей {data['post_name']} получил новый ответ"
         case "post_published":
-            text = f"Your post {data['post_name']} got a new comment"
+            text = f"Ваша статья {data['post_name']} была одобрена к публикации администрацией сайта"
         case "post_rejected":
-            text = f"Your post {data['post_name']} got a new comment"
+            text = f"Ваша статья {data['post_name']} была отклонена к публикации администрацией сайта"
     await context.bot.send_message(data["chat_id"], text=text)

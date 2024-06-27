@@ -6,8 +6,10 @@ import { Heading } from "@/components/heading";
 import { Input } from "@/components/input";
 import { useForm } from "react-hook-form";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Register() {
+  const router = useRouter();
   const [stage, setStage] = useState(0);
   const confirmation = stage === 2;
   const password = stage === 1;
@@ -21,6 +23,36 @@ export default function Register() {
     console.log(data);
     if (stage === 0) {
       setStage(1);
+    } else if (stage === 1) {
+      const form = new FormData();
+      form.append("username", data.username);
+      form.append("password", data.password);
+      form.append("password_repeat", data.password_repeat);
+      form.append("first_name", data.first_name);
+      form.append("last_name", data.last_name);
+      form.append("nickname", data.nickname);
+
+      fetch("/auth/register", { method: "POST", body: form }).then((res) => {
+        res.json().then((data) => {
+          console.log(data);
+          if (data === 0) {
+            setStage(2);
+          }
+        });
+      });
+    } else if (stage === 2) {
+      const form = new FormData();
+      form.append("username", data.username);
+      form.append("code", data.code);
+
+      fetch("/auth/activate", { method: "POST", body: form }).then((res) => {
+        res.json().then((data) => {
+          console.log(data);
+          if (data !== -1) {
+            router.push("/login");
+          }
+        });
+      });
     }
     // "use server";
     // if (!confirmation && !password) {
@@ -48,8 +80,8 @@ export default function Register() {
       <div className="flex flex-col gap-6 w-full">
         {confirmation ? (
           <Input
+            {...register("code")}
             key={1}
-            name="code"
             required
             label="Введите код"
             placeholder="000 000"
@@ -58,6 +90,7 @@ export default function Register() {
         ) : password ? (
           <>
             <Input
+              key={2}
               {...register("password")}
               type="password"
               required
@@ -66,6 +99,7 @@ export default function Register() {
               inputClassName="bg-white"
             />
             <Input
+              key={3}
               {...register("password_repeat")}
               type="password"
               required
@@ -77,6 +111,7 @@ export default function Register() {
         ) : (
           <>
             <Input
+              key={4}
               {...register("first_name", { required: true })}
               required
               label="Имя"
@@ -84,6 +119,7 @@ export default function Register() {
               inputClassName="bg-white"
             />
             <Input
+              key={5}
               {...register("last_name", { required: true })}
               required
               label="Фамилия"
@@ -91,6 +127,7 @@ export default function Register() {
               inputClassName="bg-white"
             />
             <Input
+              key={6}
               {...register("nickname", { required: true })}
               required
               label="Никнейм"
@@ -100,6 +137,7 @@ export default function Register() {
             <div className="w-full border-b border-custom-gray"></div>
             <div className="flex flex-col gap-1">
               <Input
+                key={7}
                 {...register("username", { required: true })}
                 type="email"
                 required

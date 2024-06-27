@@ -68,7 +68,7 @@ class UserView(ModelView):
     ]
 
     def is_accessible(self, request: Request) -> bool:
-        return "1" == request.session.get('user_role', None)
+        return 1 == request.session.get('user_role', None)
 
     async def create(self, request: Request, data: Dict[str, Any]):
         session = request.state.session
@@ -124,7 +124,7 @@ class UserRoleView(ModelView):
     fields = [UserRole.name]
 
     def is_accessible(self, request: Request) -> bool:
-        return "1" == request.session.get('user_role', None)
+        return 1 == request.session.get('user_role', None)
 
 
 class RegionView(ModelView):
@@ -159,7 +159,7 @@ class RegionView(ModelView):
     ]
 
     def is_accessible(self, request: Request) -> bool:
-        return "1" == request.session.get('user_role', None)
+        return 1 == request.session.get('user_role', None)
 
     async def create(self, request: Request, data: Dict[str, Any]):
         session = request.state.session
@@ -254,7 +254,7 @@ class TourismTypeView(ModelView):
     ]
 
     def is_accessible(self, request: Request) -> bool:
-        return "1" == request.session.get('user_role', None)
+        return 1 == request.session.get('user_role', None)
 
     async def create(self, request: Request, data: Dict[str, Any]):
         session = request.state.session
@@ -303,7 +303,7 @@ class TagView(ModelView):
     fields = [Hashtag.name]
 
     def is_accessible(self, request: Request) -> bool:
-        return "1" == request.session.get('user_role', None)
+        return 1 == request.session.get('user_role', None)
 
 
 class PostView(ModelView):
@@ -334,7 +334,7 @@ class PostView(ModelView):
         return False
 
     def can_delete(self, request: Request) -> bool:
-        return "1" == request.session.get("user_role", None)
+        return 1 == request.session.get("user_role", None)
 
     @row_action(
         name="approve_publication",
@@ -360,9 +360,10 @@ class PostView(ModelView):
                 "action": "post_published",
                 "email": post._author.username,
                 "post_name": post.name,
+                "user_id": str(post.author)
             }
             await ch.default_exchange.publish(
-                aio_pika.Message(body=json.dumps(data).encode()), routing_key="mailer"
+                aio_pika.Message(body=json.dumps(data).encode()), routing_key=("mailer" if post._author.notification_channel == 1 else 'telegram')
             )
         return f"Publication accepted"
 
@@ -389,9 +390,10 @@ class PostView(ModelView):
                 "action": "post_rejected",
                 "email": post._author.username,
                 "post_name": post.name,
+                "user_id": str(post.author)
             }
             await ch.default_exchange.publish(
-                aio_pika.Message(body=json.dumps(data).encode()), routing_key="mailer"
+                aio_pika.Message(body=json.dumps(data).encode()), routing_key=("mailer" if post._author.notification_channel == 1 else 'telegram')
             )
         return f"Publication denied"
 

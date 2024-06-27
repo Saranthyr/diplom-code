@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { twMerge } from "tailwind-merge";
 import { HeaderLink } from "@/components/header-link";
+import { redirect } from "next/navigation";
+import { useState, useEffect } from "react";
 
 const HeaderSection = ({ children, className }) => {
   return (
@@ -13,7 +15,12 @@ const HeaderSection = ({ children, className }) => {
 };
 
 export const Header = () => {
-  const isAuthorized = localStorage.getItem("access_token");
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    setIsAuthorized(!!token);
+  }, []);
 
   return (
     <header className="w-full">
@@ -37,11 +44,19 @@ export const Header = () => {
           <Link href="/authors" className="text-gray-700 hover:text-blue-500">
             АВТОРЫ
           </Link>
-          <input
-            type="text"
-            placeholder="Поиск"
-            className="p-2.5 border rounded-[10px] text-sm normal-case font-normal"
-          />
+          <form
+            action={(data) => {
+              const request = data.get("search");
+              redirect(`/search-page` + (request ? `?request=${request}` : ""));
+            }}
+          >
+            <input
+              type="text"
+              name="search"
+              placeholder="Поиск"
+              className="p-2.5 border rounded-[10px] text-sm normal-case font-normal"
+            />
+          </form>
         </HeaderSection>
         <HeaderSection className="justify-end">
           {isAuthorized ? (

@@ -58,6 +58,13 @@ async def runner(
                                 )
                             except Exception as e:
                                 print(traceback.print_exception(e))
+                        case "activate_success":
+                            try:
+                                await mailer.send_activation_success(
+                                    op["email"], op["code"]
+                                )
+                            except Exception as e:
+                                print(traceback.print_exception(e))
 
 
 def main():

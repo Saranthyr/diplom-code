@@ -19,9 +19,9 @@ class UserResponse(BaseModel):
     avatar: str | None | UUID
     header: str | None | UUID
     about: str | None
-    posts_total: int
+    posts_total: int = 0
     created_at: datetime.datetime
-    location: int
+    location: int | None
     link_tg: str | None
     rating: float
 
@@ -39,7 +39,7 @@ class SearchGlobalPost(BaseModel):
     id: UUID
     name: str
     header: str
-    thumbnail: str | UUID
+    thumbnail: str | UUID | None
     created_at: datetime.datetime
     author: "SearchGlobalPostAuthor | UUID "
     hashtags: list[str] | None = Field(None)

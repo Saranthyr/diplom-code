@@ -158,9 +158,12 @@ class SearchService:
             archived,
         )
         for post in posts:
-            thumbnail = await self.file_service.read_file(post["thumbnail"])
-            if thumbnail is not None:
-                thumbnail = thumbnail["url"]
+            if post['thumbnail'] is not None:
+                thumbnail = await self.file_service.read_file(post["thumbnail"])
+                if thumbnail is not None:
+                    thumbnail = thumbnail["url"]
+            else:
+                thumbnail = ''
 
             author = await self.user_service.read(post["author"])
             avatar = None
@@ -177,7 +180,7 @@ class SearchService:
                 tags.append(tag)
 
             region = SearchGlobalPostRegion(
-                **(await self.region_service.read(post["region"]))
+                **(await self.region_service.read(post["region"] if not None else 1))
             )
 
             post_res = SearchGlobalPost(

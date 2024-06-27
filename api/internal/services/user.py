@@ -93,3 +93,6 @@ class UserService:
 
     async def search(self, s):
         return await self.repository.search(s)
+
+    async def curr_notif_ch(self, id):
+        return await self.repository.curr_notif_ch(id)

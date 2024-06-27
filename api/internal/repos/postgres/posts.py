@@ -124,23 +124,23 @@ class PostRepository:
                         Post.name.ilike(f"%{q}%"),
                         (
                             Post.region.in_(region)
-                            if (region is not None and len(region) > 1)
+                            if (region is not None and len(region) >= 1)
                             else True
                         ),
                         (
                             Post.tourism_type.in_(tourism_type)
-                            if (tourism_type is not None and len(tourism_type) > 1)
+                            if (tourism_type is not None and len(tourism_type) >= 1)
                             else True
                         ),
                         Post.rating >= (rating),
                         (
                             Post.author.in_(author)
-                            if (author is not None and len(author) > 1)
+                            if (author is not None and len(author) >= 1)
                             else True
                         ),
                         (
                             Post.approved.in_(approved)
-                            if (approved is not [] and len(approved) > 1) else
+                            if (approved is not [] and len(approved) >= 1) else
                             Post.approved.in_([2])
                         ),
                         (

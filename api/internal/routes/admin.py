@@ -4,6 +4,7 @@ from fastapi import Request, Response
 from sqlalchemy import select
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
+from starlette_admin import I18nConfig
 from starlette_admin.contrib.sqla import Admin
 from starlette_admin.auth import AuthProvider, AdminConfig, AdminUser
 from starlette_admin.exceptions import LoginFailed
@@ -113,12 +114,13 @@ def admin(engine: Database = Provide[Container.db]) -> Admin:
                 SessionMiddleware, secret_key=os.environ["JWT_SECRET"], max_age=None
             )
         ],
+        i18n_config=I18nConfig(default_locale='ru')
     )
-    _.add_view(UserView(User, identity="user"))
-    _.add_view(FileView(File, identity="file"))
-    _.add_view(UserRoleView(UserRole, identity="role"))
-    _.add_view(RegionView(Region, identity="region"))
-    _.add_view(TourismTypeView(TourismType, identity="tourism_type"))
-    _.add_view(PostView(Post))
-    _.add_view(TagView(Hashtag, identity="tags"))
+    _.add_view(UserView(User, identity="user", label="Пользователи"))
+    _.add_view(FileView(File, identity="file", label="Файлы"))
+    _.add_view(UserRoleView(UserRole, identity="role", label="Роли"))
+    _.add_view(RegionView(Region, identity="region", label="Регионы"))
+    _.add_view(TourismTypeView(TourismType, identity="tourism_type", label="Типы туризма"))
+    _.add_view(PostView(Post, label="Статьи к модерации"))
+    _.add_view(TagView(Hashtag, identity="tags", label="Хештеги"))
     return _

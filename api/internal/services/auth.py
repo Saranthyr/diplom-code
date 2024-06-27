@@ -89,7 +89,13 @@ class AuthService:
             await self.redis.remove_code(username)
             cod = await self.redis.generate_tg_code(str(user_data.id))
             await self.user_service.activate_account(username)
-            return cod
+            async with self.rmq.connection() as conn:
+                ch = await conn.channel()
+                data = {"action": "activate_success", "email": username, "code": str(cod)}
+                await ch.default_exchange.publish(
+                    aio_pika.Message(body=json.dumps(data).encode()), routing_key="mailer"
+                )
+            return 0
         # if code == 000000:
         #     await self.user_service.activate_account(username)
         #     return 0

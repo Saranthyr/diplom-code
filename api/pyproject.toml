@@ -31,7 +31,7 @@ pre-commit = "^3.7.0"
 aio-pika = "^9.4.1"
 motor = "^3.4.0"
 redis = "^5.0.0"
-starlette-admin = "^0.14"
+starlette-admin = {version="^0.14", extras=["i18n"]}
 sqlalchemy-file = "^0.6.0"
 pillow = "^10.3.0"
 black = "^24.4.2"

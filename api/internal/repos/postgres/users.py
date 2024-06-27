@@ -180,3 +180,9 @@ class UserRepository:
             )
             res = await s.execute(stmt)
         return res.mappings().all()
+
+    async def curr_notif_ch(self, id):
+        async with self.session_factory() as s:
+            stmt = select(User.notification_channel).where(User.id == id)
+            res = await s.execute(stmt)
+            return res.scalar_one()

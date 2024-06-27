@@ -161,7 +161,7 @@ class PostServiceMain:
                 )["name"]
             },
             tags=tags,
-            thumbnail=(await self.file_service.read_file(data["thumbnail"]))["url"],
+            thumbnail=(await self.file_service.read_file(data["thumbnail"]))["url"] if data['thumbnail'] is not None else '',
             approved=data["approved"],
         )
         return res
@@ -204,6 +204,7 @@ class PostServiceMain:
     async def create_comment(self, token, post_id, responding_to, contents):
         decoded = await decode_token(token)
         curr_user = UUID(decoded["sub"])
+        notif_ch = await self.user_service.curr_notif_ch(curr_user)
         post_data = await self.post_service.read(post_id)
         async with self.rabbitmq.connection() as con:
             ch = await con.channel()
@@ -224,7 +225,7 @@ class PostServiceMain:
                 }
 
             await ch.default_exchange.publish(
-                aio_pika.Message(body=json.dumps(data).encode()), routing_key="mailer"
+                aio_pika.Message(body=json.dumps(data).encode()), routing_key=("mailer" if notif_ch == 1 else 'telegram')
             )
         return await self.comments.insert_comment(
             curr_user, post_id, responding_to, contents
